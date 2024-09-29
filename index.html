@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>詐騙資訊檢測器 - 警惕詐騙，保護自己</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #1a1a2e;
+      color: #ffffff;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      box-sizing: border-box;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    #story-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 1s ease;
+    }
+
+    #story-content {
+      max-width: 600px;
+      text-align: center;
+      font-size: 1.2em;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    #story-image {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    #skip-button {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+
+    #skip-button:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #detector-container {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      padding: 40px;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    #detector-container.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1 {
+      color: #ffffff;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .input-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #ffffff;
+      font-size: 1.1em;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+      resize: vertical;
+      min-height: 100px;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    textarea:focus {
+      border-color: #4a69bd;
+      outline: none;
+    }
+
+    button {
+      background-color: #4a69bd;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 1.1em;
+      transition: all 0.3s ease;
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #1e3799;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(74, 105, 189, 0.3);
+    }
+
+    .result, .ai-response {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 1.1em;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .result.show, .ai-response.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .result.safe {
+      background-color: rgba(40, 167, 69, 0.2);
+      border-left: 5px solid #28a745;
+    }
+
+    .result.danger {
+      background-color: rgba(220, 53, 69, 0.2);
+      border-left: 5px solid #dc3545;
+    }
+
+    .ai-response {
+      background-color: rgba(108, 117, 125, 0.2);
+      border-left: 5px solid #6c757d;
+    }
+
+    .loading {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .loading::after {
+      content: "";
+      width: 30px;
+      height: 30px;
+      border: 5px solid rgba(255, 255, 255, 0.2);
+      border-top: 5px solid #4a69bd;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .animation-area {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .icon-animation {
+      font-size: 3em;
+      animation: pulse 1.5s infinite;
+      color: #4a69bd;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.8); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.7; }
+    }
+
+    #audio-control {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #audio-control:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="story-container">
+    <div id="story-content">
+      <img id="story-image" src="" alt="Story scene">
+      <p id="story-text"></p>
+    </div>
+    <button id="skip-button" style="display: none;">跳過動畫</button>
+  </div>
+
+  <div class="container">
+    <div id="detector-container" style="display: none;">
+      <h1>詐騙資訊檢測器</h1>
+      <div class="input-group">
+        <label for="textInput">輸入可疑訊息:</label>
+        <textarea id="textInput" placeholder="在此輸入您收到的可疑訊息..."></textarea>
+      </div>
+      <button id="detectBtn">檢測詐騙</button>
+      <div class="loading" id="loadingIndicator"></div>
+      <div class="result" id="resultArea"></div>
+      <div class="ai-response" id="aiResponse"></div>
+    </div>
+  </div>
+
+  <div class="animation-area" id="animationArea"></div>
+  <button id="audio-control"><i class="fas fa-volume-up"></i></button>
+
+  <script src="renderer.js"></script>
+  <script>
+    const storyContainer = document.getElementById('story-container');
+    const storyContent = document.getElementById('story-content');
+    const storyImage = document.getElementById('story-image');
+    const storyText = document.getElementById('story-text');
+    const skipButton = document.getElementById('skip-button');
+    const detectorContainer = document.getElementById('detector-container');
+    const audioControl = document.getElementById('audio-control');
+
+    const storyScenes = [
+      {
+        text: "小明是一名高中生，生活單純美好。",
+        image: "https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "一天，他收到一則看似賺錢的工作邀請。",
+        image: "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "起初，小明只是被要求提供銀行帳戶資訊。",
+        image: "https://images.pexels.com/photos/210607/pexels-photo-210607.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "漸漸地，他被要求轉帳、領錢，甚至招募其他人。",
+        image: "https://images.pexels.com/photos/1591060/pexels-photo-1591060.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "小明這才意識到，他已經成為詐騙集團的一員。",
+        image: "https://images.pexels.com/photos/4498066/pexels-photo-4498066.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "但為時已晚，他陷入了難以脫身的境地。",
+        image: "https://images.pexels.com/photos/3201912/pexels-photo-3201912.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "這個教訓告訴我們：要時刻保持警惕，不要輕易相信網上的陌生人。",
+        image: "https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      },
+      {
+        text: "讓我們一起學習如何識別詐騙，保護自己和身邊的人。",
+        image: "https://images.pexels.com/photos/3183171/pexels-photo-3183171.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+      }
+    ];
+
+    let currentScene = 0;
+    const audio = new Audio('https://www.bensound.com/bensound-music/bensound-sunny.mp3');
+    audio.loop = true;
+
+    function showNextScene() {
+      if (currentScene < storyScenes.length) {
+        storyContent.style.opacity = 0;
+        storyContent.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+          storyImage.src = storyScenes[currentScene].image;
+          storyText.textContent = storyScenes[currentScene].text;
+          
+          storyContent.style.opacity = 1;
+          storyContent.style.transform = 'translateY(0)';
+          
+          currentScene++;
+          setTimeout(showNextScene, 5000); // 每5秒顯示下一個場景
+        }, 500);
+      } else {
+        endStory();
+      }
+    }
+
+    function endStory() {
+      storyContainer.style.opacity = 0;
+      setTimeout(() => {
+        storyContainer.style.display = 'none';
+        detectorContainer.style.display = 'block';
+        setTimeout(() => {
+          detectorContainer.classList.add('show');
+        }, 50);
+      }, 1000);
+    }
+
+    // 開始顯示故事
+    showNextScene();
+
+    // 10秒後顯示跳過按鈕
+    setTimeout(() => {
+      skipButton.style.display = 'block';
+    }, 10000);
+
+    skipButton.addEventListener('click', endStory);
+
+    // 音頻控制
+    audioControl.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play();
+        audioControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+      } else {
+        audio.pause();
+        audioControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+      }
+    });
+
+    // 自動播放音樂（某些瀏覽器可能會阻止自動播放）
+    audio.play().catch(() => {
+      audioControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+    });
+  </script>
+</body>
+</html>
